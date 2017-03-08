@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import br.com.sonikro.command.BaseCommand;
+import br.com.sonikro.command.ChainCommand;
 import br.com.sonikro.command.ICommand;
 import br.com.sonikro.command.ICommandListener;
 
@@ -16,7 +17,7 @@ public class MainTest implements ICommandListener{
 			command.execute();
 			command.onSuccess();
 		} catch (Exception e) {
-			command.rolback(e);
+			command.rollback(e);
 		}
 		
 	}
@@ -28,12 +29,16 @@ public class MainTest implements ICommandListener{
 
 		String stringVar = new String("Hello");
 		
-		BaseCommand command = new DummyCommand(test,  integerVar, stringVar);
-		command.dispatch();
+		ArrayList<BaseCommand> listOfCommands = new ArrayList<BaseCommand>();
 		
-		Long result = (Long) command.getResult("result");
-		System.out.println("Get specific result : "+result);
-		List<Object> results = Arrays.asList(command.getResultObjects());
+		listOfCommands.add(new DummyCommand(test,  integerVar, stringVar));
+		listOfCommands.add(new SecondDummyCommand(test));
+		
+		BaseCommand chainCommand = new ChainCommand(test, listOfCommands);
+		chainCommand.dispatch();
+		
+
+		List<Object> results = Arrays.asList(chainCommand.getResultObjects());
 		System.out.println("Get all results"+results);
 	}
 }

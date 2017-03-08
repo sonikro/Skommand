@@ -2,6 +2,8 @@ package br.com.sonikro.command;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import org.jboss.logging.Logger;
@@ -31,7 +33,7 @@ public abstract class BaseCommand implements ICommand, IChainCommand {
 	}
 
 	@Override
-	public void rolback(Exception exception) {
+	public void rollback(Exception exception) {
 		logger.error("Error executing Command " + getClass().getName(), exception);
 	}
 
@@ -143,5 +145,17 @@ public abstract class BaseCommand implements ICommand, IChainCommand {
 	
 		}
 		throw new SkommandException("No result object called "+name);
+	}
+	
+	@Override
+	public String toString() {
+		List<Object> results = Arrays.asList(getResultObjects());
+		Iterator<Object> iterator = results.iterator();
+		StringBuilder sb = new StringBuilder();
+		while(iterator.hasNext())
+		{
+			sb.append(iterator.next().toString());
+		}
+		return sb.toString();
 	}
 }
