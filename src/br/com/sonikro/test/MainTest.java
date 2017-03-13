@@ -6,6 +6,8 @@ import java.util.List;
 
 import br.com.sonikro.command.BaseCommand;
 import br.com.sonikro.command.ChainCommand;
+import br.com.sonikro.command.ChainCommandBuilder;
+import br.com.sonikro.command.CommandBuilder;
 import br.com.sonikro.command.ICommand;
 import br.com.sonikro.command.ICommandListener;
 
@@ -22,23 +24,35 @@ public class MainTest implements ICommandListener{
 		
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception{
 		MainTest test = new MainTest();
 
 		Integer integerVar = new Integer(10);
 
 		String stringVar = new String("Hello");
 		
-		ArrayList<BaseCommand> listOfCommands = new ArrayList<BaseCommand>();
+		Double doubleVar = new Double(55);
 		
-		listOfCommands.add(new DummyCommand(test,  integerVar, stringVar));
-		listOfCommands.add(new SecondDummyCommand(test));
+		CommandBuilder cmdBuilder = new CommandBuilder(test);
+		ChainCommandBuilder chainBuilder = new ChainCommandBuilder();
 		
-		BaseCommand chainCommand = new ChainCommand(test, listOfCommands);
+		BaseCommand command1 = cmdBuilder.initializeWith(integerVar, stringVar, doubleVar)
+										 .setCommandClass(DummyCommand.class)
+										 .build();
+		
+		BaseCommand command2 = cmdBuilder.setCommandClass(SecondDummyCommand.class)
+										 .build();
+		
+		ChainCommand chainCommand = chainBuilder.setListener(test)
+											    .add(command1)
+											    .add(command2)
+											    .build();
+		
 		chainCommand.dispatch();
 		
 
-		List<Object> results = Arrays.asList(chainCommand.getResultObjects());
+		List<Object> results = chainCommand.getResultObjectsList();
+		System.out.println("Chain Result:"+chainCommand.getResult("result2"));
 		System.out.println("Get all results"+results);
 	}
 }

@@ -5,7 +5,7 @@ import br.com.sonikro.command.CmdResultVar;
 import br.com.sonikro.command.CmdStarterVar;
 import br.com.sonikro.command.ICommandListener;
 
-public class DummyCommand extends BaseCommand {
+public class DummyCommand extends DummySuperCommand {
 	@CmdStarterVar
 	private Integer mInt;
 	@CmdStarterVar
@@ -14,9 +14,6 @@ public class DummyCommand extends BaseCommand {
 	@CmdResultVar(name="result2")
 	private String mResult;
 	
-	public DummyCommand(ICommandListener listener, Object... starterObjects) {
-		super(listener, starterObjects);
-	}
 
 	@Override
 	public void execute() throws Exception {

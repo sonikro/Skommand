@@ -15,13 +15,13 @@ import java.lang.annotation.Annotation;
 public abstract class BaseCommand implements ICommand, IChainCommand {
 
 	protected ICommandListener mListener;
-
+	protected Exception mException;
 	protected static Logger logger = Logger.getLogger(BaseCommand.class);
 
-	public BaseCommand(ICommandListener listener,Object... starterObjects) {
+	/*public BaseCommand(ICommandListener listener,Object... starterObjects) {
 		this.mListener = listener;
 		setStartObjects(starterObjects);
-	}
+	}*/
 
 	public void dispatch() {
 		mListener.onCommand(this);
@@ -34,14 +34,40 @@ public abstract class BaseCommand implements ICommand, IChainCommand {
 
 	@Override
 	public void rollback(Exception exception) {
+		mException = exception;
 		logger.error("Error executing Command " + getClass().getName(), exception);
+	}
+	
+	public boolean hasErrors()
+	{
+		if(mException!=null)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	public Exception getException()
+	{
+		return mException;
+	}
+	
+	public void throwException() throws Exception
+	{
+		if(mException!=null)
+		{
+			throw mException;
+		}
 	}
 
 	@Override
 	public void setStartObjects(Object... objects) {
 		
-		Field[] declaredFields = getClass().getDeclaredFields();
-
+		Field[] declaredFields = ReflectionTool.getRecursiveClassFields(getClass());
+		
 		for(Field field : declaredFields)
 		{
 			if(field.isAnnotationPresent(CmdStarterVar.class))
@@ -49,7 +75,7 @@ public abstract class BaseCommand implements ICommand, IChainCommand {
 				CmdStarterVar annotation = (CmdStarterVar) field.getAnnotation(CmdStarterVar.class);
 				for(Object starterObject : objects)
 				{
-					if(starterObject.getClass().equals(field.getType()))
+					if(starterObject != null && starterObject.getClass().equals(field.getType()))
 					{
 						try {
 							if(!field.isAccessible())
@@ -62,6 +88,7 @@ public abstract class BaseCommand implements ICommand, IChainCommand {
 							{
 								field.set(this, starterObject);
 							}
+							logger.info(field.getType()+ " successfuly injected into command "+getClass().getSimpleName());
 						} catch (IllegalArgumentException e) {
 							logger.error(e);
 						} catch (IllegalAccessException e) {
@@ -79,13 +106,14 @@ public abstract class BaseCommand implements ICommand, IChainCommand {
 
 	@Override
 	public Object[] getResultObjects() {
-		Field[] declaredFields = getClass().getDeclaredFields();
+		Field[] declaredFields = ReflectionTool.getRecursiveClassFields(getClass());
 		List<Object> resultList = new ArrayList<Object>();
 		for(Field field : declaredFields)
 		{
 			if(field.isAnnotationPresent(CmdResultVar.class))
 			{
 				CmdResultVar annotation = (CmdResultVar) field.getAnnotation(CmdResultVar.class);
+				//logger.info("Command Get Result Objects: Annotation Found at "+field.getType()+" with name "+annotation.name());
 				try {
 					Object result;
 					if(!field.isAccessible())
@@ -112,13 +140,14 @@ public abstract class BaseCommand implements ICommand, IChainCommand {
 	
 	public Object getResult(String name)
 	{
-		Field[] declaredFields = getClass().getDeclaredFields();
-
+		Field[] declaredFields = ReflectionTool.getRecursiveClassFields(getClass());
+		
 		for(Field field : declaredFields)
 		{
 			if(field.isAnnotationPresent(CmdResultVar.class))
 			{
 				CmdResultVar annotation = (CmdResultVar) field.getAnnotation(CmdResultVar.class);
+				//logger.info("Command Get Result : Annotation Found at "+field.getType()+" with name "+annotation.name());
 				if(annotation.name().equals(name))
 				{
 					Object result;
@@ -133,6 +162,7 @@ public abstract class BaseCommand implements ICommand, IChainCommand {
 						{
 							result = field.get(this);
 						}
+						logger.info("Returning Result ("+annotation.name()+")");
 						return result;
 					} catch (IllegalArgumentException e) {
 						logger.error(e);
@@ -147,6 +177,10 @@ public abstract class BaseCommand implements ICommand, IChainCommand {
 		throw new SkommandException("No result object called "+name);
 	}
 	
+	public List<Object> getResultObjectsList()
+	{
+		return Arrays.asList(getResultObjects());
+	}
 	@Override
 	public String toString() {
 		List<Object> results = Arrays.asList(getResultObjects());
